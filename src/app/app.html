@@ -1,0 +1,324 @@
+<nav class="navbar">
+  <div class="logo" (click)="setTab('home')" style="cursor: pointer;">
+    <span>🚆 STEP TRAINS</span>
+  </div>
+  <div class="nav-links">
+    <a href="javascript:void(0)" [class.active]="currentTab === 'home'" (click)="setTab('home')">Home</a>
+    <a href="javascript:void(0)" [class.active]="currentTab === 'trains' || currentTab === 'train-detail'" (click)="setTab('trains')">Trains</a>
+    
+    <button class="btn-signin" (click)="setTab('login'); $event.preventDefault()">Sign in</button>
+    <a href="javascript:void(0)" class="btn-get-started" (click)="setTab('register'); $event.preventDefault()">Get Started</a>
+  </div>
+</nav>
+
+<div *ngIf="currentTab === 'home'">
+  <section class="hero-section">
+    <div class="hero-content">
+      <span class="badge">STEP TRAINS</span>
+      <h1>Travel Smarter,<br>Journey Farther</h1>
+      <p>Search thousands of train routes and book your seats in seconds.</p>
+
+      <div class="search-box">
+        <div class="search-field">
+          <label>FROM</label>
+          <input type="text" [(ngModel)]="homeFrom" placeholder="Origin city or station">
+        </div>
+        <span class="arrow">➔</span>
+        <div class="search-field">
+          <label>TO</label>
+          <input type="text" [(ngModel)]="homeTo" placeholder="Destination city or station">
+        </div>
+        <button class="btn-search" (click)="onHomeSearch()">🔍 Search</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="main-content">
+    <div class="features-grid">
+      <div class="card">
+        <div class="card-icon">🎛️</div>
+        <h3>Multiple Classes</h3>
+        <p>Choose from First, Business, or Second class coaches on every train.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📅</div>
+        <h3>Flexible Dates</h3>
+        <p>Pick any future travel date when booking — change it anytime before departure.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎁</div>
+        <h3>Choose Your Seat</h3>
+        <p>Pick the exact seat you want from a live map of available seats.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">✔️</div>
+        <h3>Instant Confirmation</h3>
+        <p>Your booking is confirmed immediately. View and manage all trips in your profile.</p>
+      </div>
+    </div>
+
+    <div class="cta-card">
+      <h2>Ready to book your journey?</h2>
+      <p>Browse all available trains and schedules, then choose your seat.</p>
+      <div class="cta-actions">
+        <button class="btn-browse" (click)="setTab('trains')">Browse Trains</button>
+        <button class="btn-create" (click)="setTab('register')">Create Account</button>
+      </div>
+    </div>
+
+    <footer class="footer">
+      Created By It Step Academy Georgia
+    </footer>
+  </section>
+</div>
+
+<div *ngIf="currentTab === 'trains'" class="trains-page">
+  <div class="page-header">
+    <span class="sub-title">EXPLORE</span>
+    <h1>Train Routes</h1>
+    <p>Find trains by name, or filter by origin and destination.</p>
+  </div>
+
+  <div class="trains-layout">
+    <aside class="sidebar">
+      <div class="filter-box">
+        <h3>SEARCH</h3>
+        <label>SEARCH TRAIN NUMBER</label>
+        <input type="text" [(ngModel)]="searchTrainName" (ngModelChange)="onSearchByName()" placeholder="e.g. Tbilisi, Batumi, 101...">
+        <button class="btn-search-side" (click)="onSearchByName()">Search</button>
+      </div>
+
+      <div class="filter-box">
+        <h3>FILTER BY ROUTE</h3>
+        <label>FROM</label>
+        <select [(ngModel)]="selectedFromStation" (change)="onApplyRouteFilter()">
+          <option value="">Any origin</option>
+          <option *ngFor="let st of stations" [value]="st.name">{{st.name}}</option>
+        </select>
+
+        <label>TO</label>
+        <select [(ngModel)]="selectedToStation" (change)="onApplyRouteFilter()">
+          <option value="">Any destination</option>
+          <option *ngFor="let st of stations" [value]="st.name">{{st.name}}</option>
+        </select>
+
+        <button class="btn-search-side" (click)="onApplyRouteFilter()">Apply Filter</button>
+        <button class="btn-clear" (click)="clearFilters()">Clear</button>
+      </div>
+    </aside>
+
+    <main class="trains-grid-container">
+      <div class="results-count">{{trains.length}} trains found</div>
+      
+      <div class="trains-grid">
+        <div class="train-card" *ngFor="let train of trains; let i = index" (click)="selectTrain(train, i)" style="cursor: pointer;">
+          <div class="train-img-wrapper">
+            <img [src]="getImage(i)" [alt]="train.name || 'Train'">
+          </div>
+          <div class="train-info">
+            <div class="train-top">
+              <span class="train-num">{{train.number || '#'+train.id}}</span>
+              <span class="badge-coaches">{{train.coachesCount || 3}} coaches</span>
+            </div>
+            <h2>{{train.name || 'Express Train'}}</h2>
+            <div class="train-seats">🪑 {{train.seatsCount || 60}} seats</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div *ngIf="currentTab === 'train-detail' && selectedTrain" class="detail-page">
+  <div class="detail-hero">
+    <div class="detail-img-box">
+      <img [src]="getImage(selectedTrain.imageIndex)" [alt]="selectedTrain.name">
+    </div>
+    <div class="detail-hero-info">
+      <span class="detail-num">{{selectedTrain.number || 'TRAIN #'+selectedTrain.id}}</span>
+      <h1>{{selectedTrain.name}}</h1>
+      <div class="detail-stats">
+        <div>
+          <span class="stat-label">COACHES</span>
+          <span class="stat-value">{{selectedTrain.coachesCount || 3}}</span>
+        </div>
+        <div>
+          <span class="stat-label">TOTAL SEATS</span>
+          <span class="stat-value">{{selectedTrain.seatsCount || 60}}</span>
+        </div>
+        <div>
+          <span class="stat-label">SCHEDULES</span>
+          <span class="stat-value">{{selectedTrain.schedulesCount || 2}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-tabs">
+    <button [class.active]="activeDetailTab === 'schedules'" (click)="activeDetailTab = 'schedules'">
+      Schedules ({{selectedTrainSchedules.length}})
+    </button>
+    <button [class.active]="activeDetailTab === 'coaches'" (click)="activeDetailTab = 'coaches'">
+      Coaches ({{selectedTrainCoaches.length}})
+    </button>
+  </div>
+
+  <div class="detail-tab-content">
+    <div *ngIf="activeDetailTab === 'schedules'" class="schedules-list">
+      <div class="schedule-item" *ngFor="let sch of selectedTrainSchedules">
+        <div class="route-info">
+          <span>{{sch.origin}}</span>
+          <span class="arrow">➔</span>
+          <span>{{sch.destination}}</span>
+        </div>
+        <div class="schedule-right">
+          <span class="time-badge">🕒 {{sch.time}}</span>
+          <button class="btn-signin-book" (click)="setTab('login')">Sign in to book</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="activeDetailTab === 'coaches'" class="coaches-list">
+      <div class="coach-item" *ngFor="let coach of selectedTrainCoaches">
+        <h3>{{coach.name}}</h3>
+        <span>🪑 {{coach.seats}} seats</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer" style="margin-top: 60px;">
+    Created By It Step Academy Georgia
+  </footer>
+</div>
+
+<div *ngIf="currentTab === 'login'" class="login-container">
+  <div class="banner-section">
+    <div class="brand-box">
+      <div class="logo-icon">🧳</div>
+      <h1>STEP TRAINS</h1>
+      <p>Book train tickets and manage your trips with your account.</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-item">
+        <h2>500+</h2>
+        <span>ROUTES</span>
+      </div>
+      <div class="stat-item">
+        <h2>50+</h2>
+        <span>STATIONS</span>
+      </div>
+      <div class="stat-item">
+        <h2>24/7</h2>
+        <span>SUPPORT</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-card">
+      <div class="login-header">
+        <div class="icon-circle">➔]</div>
+        <h2>Welcome Back</h2>
+        <p>Sign in to book your next trip</p>
+      </div>
+
+      <div *ngIf="loginError" class="error-msg">
+        {{ loginError }}
+      </div>
+
+      <form (ngSubmit)="onLogin()">
+        <div class="input-group">
+          <label>✉️ Email address</label>
+          <input type="email" [(ngModel)]="loginData.email" name="email" placeholder="Enter your email" required>
+        </div>
+
+        <div class="input-group">
+          <label>🔒 Password</label>
+          <input type="password" [(ngModel)]="loginData.password" name="password" placeholder="Enter your password" required>
+        </div>
+
+        <div class="form-options">
+          <label class="checkbox-container">
+            <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe">
+            <span>Remember me</span>
+          </label>
+          <a href="javascript:void(0)" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn-submit">Sign In</button>
+      </form>
+
+      <div class="divider"><span>OR</span></div>
+
+      <p class="signup-text">
+        Don't have an account? <a href="javascript:void(0)" (click)="setTab('register')">Create one now</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="currentTab === 'register'" class="login-container">
+  <div class="banner-section">
+    <div class="brand-box">
+      <div class="logo-icon">🧳</div>
+      <h1>STEP TRAINS</h1>
+      <p>Create an account to manage your bookings easily.</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-item">
+        <h2>500+</h2>
+        <span>ROUTES</span>
+      </div>
+      <div class="stat-item">
+        <h2>50+</h2>
+        <span>STATIONS</span>
+      </div>
+      <div class="stat-item">
+        <h2>24/7</h2>
+        <span>SUPPORT</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-card">
+      <div class="login-header">
+        <div class="icon-circle">👤</div>
+        <h2>Create Account</h2>
+        <p>Sign up to get started</p>
+      </div>
+
+      <form (ngSubmit)="onRegister()">
+        <div class="input-group">
+          <label>👤 Full Name</label>
+          <input type="text" [(ngModel)]="registerData.fullName" name="fullName" placeholder="Enter your name" required>
+        </div>
+
+        <div class="input-group">
+          <label>✉️ Email address</label>
+          <input type="email" [(ngModel)]="registerData.email" name="email" placeholder="Enter your email" required>
+        </div>
+
+        <div class="input-group">
+          <label>🔒 Password</label>
+          <input type="password" [(ngModel)]="registerData.password" name="password" placeholder="Create a password" required>
+        </div>
+
+        <div class="input-group">
+          <label>🔒 Confirm Password</label>
+          <input type="password" [(ngModel)]="registerData.confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
+        </div>
+
+        <button type="submit" class="btn-submit" style="margin-top: 15px;">Create Account</button>
+      </form>
+
+      <div class="divider"><span>OR</span></div>
+
+      <p class="signup-text">
+        Already have an account? <a href="javascript:void(0)" (click)="setTab('login')">Sign In</a>
+      </p>
+    </div>
+  </div>
+</div>
