@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from './services/api';
 import { AuthService } from './services/auth.service';
 
@@ -12,7 +13,6 @@ import { AuthService } from './services/auth.service';
   styleUrl: './app.css'
 })
 export class App implements OnInit {
-  // 1. ტაბების ჩამონათვალში დავამატეთ 'register'
   currentTab: 'home' | 'trains' | 'train-detail' | 'login' | 'register' = 'home';
   activeDetailTab: 'schedules' | 'coaches' = 'schedules';
 
@@ -24,7 +24,7 @@ export class App implements OnInit {
   rememberMe: boolean = false;
   loginError: string = '';
 
-  // 2. რეგისტრაციის ცვლადები
+  // რეგისტრაციის ცვლადები
   registerData = {
     fullName: '',
     email: '',
@@ -56,15 +56,29 @@ export class App implements OnInit {
 
   constructor(
     private apiService: ApiService,
-    private authService: AuthService
+    private authService: AuthService,
+    private route: ActivatedRoute,
+    private location: Location
   ) {}
 
   ngOnInit() {
     this.initData();
+
+    // Query Params წაკითხვა ლინკიდან
+    this.route.queryParams.subscribe(params => {
+      const fromParam = params['from'];
+      const toParam = params['to'];
+
+      if (fromParam || toParam) {
+        this.selectedFromStation = fromParam || '';
+        this.selectedToStation = toParam || '';
+        this.currentTab = 'trains';
+        this.onApplyRouteFilter();
+      }
+    });
   }
 
   setTab(tab: 'home' | 'trains' | 'train-detail' | 'login' | 'register') {
-    console.log('ტაბი შეიცვალა:', tab);
     this.currentTab = tab;
   }
 
@@ -73,7 +87,6 @@ export class App implements OnInit {
     
     this.authService.login(this.loginData).subscribe({
       next: (response) => {
-        console.log('წარმატებით შევიდა:', response);
         if (response && response.token) {
           localStorage.setItem('token', response.token);
         }
@@ -87,7 +100,6 @@ export class App implements OnInit {
     });
   }
 
-  // 3. რეგისტრაციის ფუნქცია
   onRegister() {
     if (!this.registerData.email || !this.registerData.password) {
       alert('გთხოვთ შეავსოთ ყველა აუცილებელი ველი!');
@@ -203,6 +215,21 @@ export class App implements OnInit {
     this.trains = [...this.allTrainsMaster];
   }
 
+  onHomeSearch() {
+    this.selectedFromStation = this.homeFrom;
+    this.selectedToStation = this.homeTo;
+    
+    const queryParams = new URLSearchParams();
+    if (this.homeFrom) queryParams.set('from', this.homeFrom);
+    if (this.homeTo) queryParams.set('to', this.homeTo);
+    
+    const newUrl = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    this.location.go(newUrl);
+
+    this.currentTab = 'trains';
+    this.onApplyRouteFilter();
+  }
+
   onSearchByName() {
     const query = this.searchTrainName.trim().toLowerCase();
     
@@ -244,18 +271,11 @@ export class App implements OnInit {
     });
   }
 
-  onHomeSearch() {
-    this.currentTab = 'trains';
-    if (this.homeFrom || this.homeTo) {
-      this.searchTrainName = this.homeFrom || this.homeTo;
-      this.onSearchByName();
-    }
-  }
-
   clearFilters() {
     this.searchTrainName = '';
     this.selectedFromStation = '';
     this.selectedToStation = '';
+    this.location.go('');
     this.trains = [...this.allTrainsMaster];
   }
 
